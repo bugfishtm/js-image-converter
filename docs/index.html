@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- META INJECTION START -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="copyright" content="bugfish">
+<meta name="language" content="en">
+<meta name="robots" content="index,follow">
+<meta name="author" content="bugfish, ynvnzmlzaa@gmail.com">
+<meta name="description" content="Browser-based image converter — convert PNG, JPEG, WebP, AVIF, ICO, BMP, GIF and more between formats with quality settings, resize options, batch processing, and no uploads in a single self-contained HTML file.">
+<meta property="og:title" content="Image Converter">
+<meta property="og:description" content="Browser-based image converter — convert PNG, JPEG, WebP, AVIF, ICO, BMP, GIF and more between formats with quality settings, resize options, batch processing, and no uploads in a single self-contained HTML file.">
+<meta property="og:image" content="/meta.jpg">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bugfishtm.github.io/js-image-converter/">
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "WebSite",
+  "name": "Image Converter",
+  "url": "https://bugfishtm.github.io/js-image-converter/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Image Converter",
+  "headline": "Image Converter — Browser-Based Image Format Converter",
+  "description": "Browser-based image converter — convert PNG, JPEG, WebP, AVIF, ICO, BMP, GIF and more between formats with quality settings, resize options, batch processing, and no uploads in a single self-contained HTML file.",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "Any (browser-based)",
+  "datePublished": "2026-05-28",
+  "dateModified": "2026-05-28",
+  "author": {
+    "@type": "Person",
+    "name": "Jan-Maurice Dahlmanns"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Bugfish",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/logo.jpg"
+    }
+  }
+}
+</script>
+<!-- META INJECTION END -->
+<link rel="icon" type="image/x-icon" href="./favicon.ico">
+<title>Image Converter</title>
+<style>
+:root {
+  --bg: #1a1a1a; --bg2: #242424; --bg3: #2e2e2e;
+  --border: #3a3a3a; --accent: #4f9cf9; --accent-h: #6baeff;
+  --text: #e0e0e0; --dim: #888;
+  --ok: #4caf50; --err: #f44336;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px; height: 100vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+header {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 10px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+header h1 { font-size: 15px; font-weight: 600; }
+header .sub { color: var(--dim); font-size: 12px; }
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* LEFT */
+.left {
+  width: 58%; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden; min-width: 320px;
+}
+.drop-zone {
+  border: 2px dashed var(--border); margin: 10px;
+  border-radius: 8px; padding: 18px 12px; text-align: center;
+  cursor: pointer; transition: border-color .2s, background .2s;
+  background: var(--bg2); flex-shrink: 0;
+}
+.drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: #1e2d3d; }
+.drop-zone .dz-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.drop-zone .dz-sub { color: var(--dim); font-size: 11px; }
+.toolbar {
+  padding: 0 10px 8px; display: flex; gap: 6px; align-items: center; flex-shrink: 0;
+}
+.btn {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); padding: 5px 11px; border-radius: 4px;
+  cursor: pointer; font-size: 12px; transition: background .15s; white-space: nowrap;
+}
+.btn:hover { background: #3a3a3a; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.btn.primary:hover { background: var(--accent-h); border-color: var(--accent-h); }
+.btn.danger { background: #7a2020; border-color: #7a2020; color: #fff; }
+.btn.danger:hover { background: #a02828; }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.file-list { flex: 1; overflow-y: auto; padding: 0 10px 10px; }
+.file-list::-webkit-scrollbar { width: 5px; }
+.file-list::-webkit-scrollbar-track { background: var(--bg); }
+.file-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.file-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 8px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 6px; margin-bottom: 4px;
+}
+.file-item:hover { background: var(--bg3); }
+.thumb-wrap {
+  width: 38px; height: 38px; flex-shrink: 0;
+  border-radius: 4px; overflow: hidden; background: #111;
+  display: flex; align-items: center; justify-content: center;
+}
+.thumb-wrap img { width: 38px; height: 38px; object-fit: contain; }
+.thumb-wrap .ph { font-size: 18px; }
+.file-info { flex: 1; min-width: 0; }
+.file-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.file-meta { color: var(--dim); font-size: 11px; margin-top: 2px; }
+.fmt-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 3px;
+  background: #1e3a5f; color: #4f9cf9; text-transform: uppercase; flex-shrink: 0;
+}
+.file-status {
+  font-size: 11px; font-weight: 600; padding: 2px 7px;
+  border-radius: 10px; flex-shrink: 0;
+}
+.s-pending { background: #2d2d2d; color: var(--dim); }
+.s-converting { background: #1e3a5f; color: #4f9cf9; }
+.s-done { background: #1a3a1a; color: var(--ok); }
+.s-error { background: #3a1a1a; color: var(--err); }
+.btn-icon {
+  background: none; border: none; color: var(--dim);
+  cursor: pointer; padding: 4px 5px; border-radius: 3px; font-size: 13px; line-height: 1;
+}
+.btn-icon:hover { color: var(--text); background: var(--bg3); }
+.btn-dl { color: var(--accent) !important; }
+.btn-dl:hover { color: var(--accent-h) !important; }
+
+/* RIGHT */
+.right { flex: 1; overflow-y: auto; padding: 10px; }
+.right::-webkit-scrollbar { width: 5px; }
+.right::-webkit-scrollbar-track { background: var(--bg); }
+.right::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+.panel-hdr {
+  padding: 7px 12px; border-bottom: 1px solid var(--border);
+  font-weight: 600; font-size: 11px; color: var(--dim);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.panel-body { padding: 9px 12px; }
+.frow {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 7px;
+}
+.frow:last-child { margin-bottom: 0; }
+.flbl { width: 105px; flex-shrink: 0; color: var(--dim); font-size: 12px; }
+.fctl { flex: 1; }
+select, input[type=number], input[type=text] {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); padding: 4px 8px; border-radius: 4px;
+  font-size: 12px; width: 100%;
+}
+select:focus, input:focus { outline: none; border-color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+.range-row { display: flex; align-items: center; gap: 8px; }
+.range-val { width: 32px; text-align: right; font-size: 12px; flex-shrink: 0; }
+.cbrow { display: flex; align-items: center; gap: 6px; }
+.cbrow input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+.cbrow label { font-size: 12px; cursor: pointer; }
+.ico-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.ico-chip {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer;
+}
+.ico-chip:hover { border-color: var(--accent); }
+.ico-chip input { accent-color: var(--accent); cursor: pointer; }
+.convert-wrap { padding: 10px 12px; }
+.convert-btn { width: 100%; padding: 9px; font-size: 14px; }
+.progress-bar {
+  height: 4px; background: var(--bg3); border-radius: 2px;
+  margin-top: 8px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--accent); border-radius: 2px;
+  transition: width .25s; width: 0;
+}
+.status-txt { font-size: 11px; color: var(--dim); margin-top: 5px; text-align: center; }
+.hidden { display: none !important; }
+input[type=file] { display: none; }
+.empty-msg { text-align: center; color: var(--dim); margin-top: 30px; font-size: 12px; }
+.warn-chip {
+  background: #3a2a00; border: 1px solid #6a4a00; color: #ffb74d;
+  border-radius: 4px; padding: 5px 10px; font-size: 11px; margin-bottom: 8px;
+}
+@media (max-width: 720px) {
+  .main { flex-direction: column; }
+  .left { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); height: 50vh; }
+  .right { width: 100%; }
+}
+</style>
+</head>
+<body>
+<header>
+  <span style="font-size:20px">🖼️</span>
+  <h1>Image Converter</h1>
+  <span class="sub">— browser-based · no uploads · no tracking</span>
+</header>
+<div class="main">
+  <div class="left">
+    <div class="drop-zone" id="dropZone">
+      <div class="dz-title">Drop images here</div>
+      <div class="dz-sub">or click to browse &nbsp;·&nbsp; JPG · PNG · GIF · WebP · BMP · ICO · SVG · AVIF · TIFF…</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="addBtn">+ Add Files</button>
+      <button class="btn danger" id="clearBtn">Clear All</button>
+      <span style="flex:1"></span>
+      <button class="btn primary" id="dlAllBtn" disabled>⬇ Download All</button>
+    </div>
+    <div class="file-list" id="fileList">
+      <div class="empty-msg" id="emptyMsg">No files added yet.</div>
+    </div>
+  </div>
+  <div class="right">
+    <!-- Format -->
+    <div class="panel">
+      <div class="panel-hdr">Output Format</div>
+      <div class="panel-body">
+        <div id="avifWarn" class="warn-chip hidden">⚠ AVIF not supported by this browser — conversion will fail.</div>
+        <div id="webpWarn" class="warn-chip hidden">⚠ WebP not supported by this browser — conversion will fail.</div>
+        <div class="frow">
+          <label class="flbl">Format</label>
+          <div class="fctl">
+            <select id="outFmt">
+              <option value="png">PNG</option>
+              <option value="jpeg" selected>JPEG / JPG</option>
+              <option value="webp">WebP</option>
+              <option value="avif">AVIF</option>
+              <option value="bmp">BMP</option>
+              <option value="ico">ICO</option>
+              <option value="gif">GIF</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Quality (jpeg/webp/avif) -->
+    <div class="panel" id="pQuality">
+      <div class="panel-hdr">Quality</div>
+      <div class="panel-body">
+        <div class="frow" id="rowQuality">
+          <label class="flbl">Quality</label>
+          <div class="fctl">
+            <div class="range-row">
+              <input type="range" id="quality" min="1" max="100" value="85">
+              <span class="range-val" id="qualityVal">85</span>
+            </div>
+          </div>
+        </div>
+        <div class="frow hidden" id="rowLossless">
+          <label class="flbl">Lossless</label>
+          <div class="fctl">
+            <div class="cbrow">
+              <input type="checkbox" id="lossless" />
+              <label for="lossless">Lossless WebP (ignores quality)</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ICO -->
+    <div class="panel hidden" id="pIco">
+      <div class="panel-hdr">ICO — Embedded Sizes</div>
+      <div class="panel-body">
+        <div class="ico-grid" id="icoGrid"></div>
+        <div style="color:var(--dim);font-size:11px;margin-top:8px">Multiple sizes are embedded in one .ico file.</div>
+      </div>
+    </div>
+    <!-- BMP -->
+    <div class="panel hidden" id="pBmp">
+      <div class="panel-hdr">BMP Options</div>
+      <div class="panel-body">
+        <div class="frow">
+          <label class="flbl">Bit Depth</label>
+          <div class="fctl">
+            <select id="bmpDepth">
+              <option value="24">24-bit RGB</option>
+              <option value="32" selected>32-bit RGBA</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- GIF -->
+    <div class="panel hidden" id="pGif">
+      <div class="panel-hdr">GIF Options</div>
+      <div class="panel-body">
+        <div class="frow">
+          <label class="flbl">Colors</label>
+          <div class="fctl">
+            <select id="gifColors">
+              <option value="16">16</option>
+              <option value="64">64</option>
+              <option value="128">128</option>
+              <option value="256" selected>256</option>
+            </select>
+          </div>
+        </div>
+        <div class="frow">
+          <label class="flbl">Dithering</label>
+          <div class="fctl">
+            <div class="cbrow">
+              <input type="checkbox" id="gifDither" checked />
+              <label for="gifDither">Floyd-Steinberg dithering</label>
+            </div>
+          </div>
+        </div>
+        <div style="color:var(--dim);font-size:11px;margin-top:4px">Static GIF only (no animation).</div>
+      </div>
+    </div>
+    <!-- Resize -->
+    <div class="panel">
+      <div class="panel-hdr">Resize</div>
+      <div class="panel-body">
+        <div class="frow">
+          <label class="flbl">Mode</label>
+          <div class="fctl">
+            <select id="resizeMode">
+              <option value="none">No resize</option>
+              <option value="width">Fixed width</option>
+              <option value="height">Fixed height</option>
+              <option value="fit">Fit within (max W×H)</option>
+              <option value="exact">Exact W×H (stretch)</option>
+              <option value="cover">Cover W×H (crop)</option>
+            </select>
+          </div>
+        </div>
+        <div id="resizeDims" class="hidden">
+          <div class="frow" id="rowRW">
+            <label class="flbl">Width (px)</label>
+            <div class="fctl"><input type="number" id="resizeW" min="1" value="800"></div>
+          </div>
+          <div class="frow" id="rowRH">
+            <label class="flbl">Height (px)</label>
+            <div class="fctl"><input type="number" id="resizeH" min="1" value="600"></div>
+          </div>
+          <div class="frow hidden" id="rowAR">
+            <label class="flbl"></label>
+            <div class="fctl">
+              <div class="cbrow">
+                <input type="checkbox" id="keepAR" checked />
+                <label for="keepAR">Maintain aspect ratio</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Background -->
+    <div class="panel" id="pBg">
+      <div class="panel-hdr">Background Fill</div>
+      <div class="panel-body">
+        <div class="frow">
+          <label class="flbl">Background</label>
+          <div class="fctl">
+            <select id="bgMode">
+              <option value="transparent">Transparent (keep alpha)</option>
+              <option value="white">White</option>
+              <option value="black">Black</option>
+              <option value="custom">Custom color</option>
+            </select>
+          </div>
+        </div>
+        <div class="frow hidden" id="rowBgColor">
+          <label class="flbl">Color</label>
+          <div class="fctl" style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="bgColor" value="#ffffff" style="width:40px;height:28px;padding:2px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);cursor:pointer">
+            <span style="color:var(--dim);font-size:11px">Applied before drawing image</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Filename -->
+    <div class="panel">
+      <div class="panel-hdr">Output Filename</div>
+      <div class="panel-body">
+        <div class="frow">
+          <label class="flbl">Prefix</label>
+          <div class="fctl"><input type="text" id="fnPrefix" placeholder="e.g. converted_"></div>
+        </div>
+        <div class="frow">
+          <label class="flbl">Suffix</label>
+          <div class="fctl"><input type="text" id="fnSuffix" placeholder="e.g. _final"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Convert -->
+    <div class="panel">
+      <div class="convert-wrap">
+        <button class="btn primary convert-btn" id="convertBtn" disabled>Convert All</button>
+        <div class="progress-bar hidden" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="status-txt" id="statusTxt"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<input type="file" id="fileInput" multiple
+  accept="image/*,.ico,.bmp,.tif,.tiff,.avif,.heic,.heif,.svg">
+
+<script>
+// ── ICO encoder ──────────────────────────────────────────────────────────────
+function encodeICO(canvases) {
+  const pngs = canvases.map(c => {
+    const b64 = c.toDataURL('image/png').split(',')[1];
+    const bin = atob(b64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return u8;
+  });
+  const n = canvases.length;
+  const hdrSz = 6 + n * 16;
+  let totalSz = hdrSz;
+  const offsets = pngs.map(p => { const o = totalSz; totalSz += p.length; return o; });
+  const buf = new ArrayBuffer(totalSz);
+  const v = new DataView(buf);
+  let p = 0;
+  v.setUint16(p, 0, true); p += 2;
+  v.setUint16(p, 1, true); p += 2;
+  v.setUint16(p, n, true); p += 2;
+  for (let i = 0; i < n; i++) {
+    const w = canvases[i].width, h = canvases[i].height;
+    v.setUint8(p++, w >= 256 ? 0 : w);
+    v.setUint8(p++, h >= 256 ? 0 : h);
+    v.setUint8(p++, 0); v.setUint8(p++, 0);
+    v.setUint16(p, 1, true); p += 2;
+    v.setUint16(p, 32, true); p += 2;
+    v.setUint32(p, pngs[i].length, true); p += 4;
+    v.setUint32(p, offsets[i], true); p += 4;
+  }
+  const u8 = new Uint8Array(buf);
+  for (let i = 0; i < n; i++) u8.set(pngs[i], offsets[i]);
+  return new Blob([buf], { type: 'image/x-icon' });
+}
+
+// ── BMP encoder ──────────────────────────────────────────────────────────────
+function encodeBMP(canvas, depth) {
+  const ctx = canvas.getContext('2d');
+  const id = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const { data, width, height } = id;
+  const bpp = depth === 32 ? 4 : 3;
+  const rowSz = Math.ceil(width * bpp / 4) * 4;
+  const pixSz = rowSz * height;
+  const buf = new ArrayBuffer(54 + pixSz);
+  const v = new DataView(buf);
+  const u8 = new Uint8Array(buf);
+  // BITMAPFILEHEADER
+  u8[0] = 0x42; u8[1] = 0x4D;
+  v.setUint32(2, 54 + pixSz, true);
+  v.setUint32(10, 54, true);
+  // BITMAPINFOHEADER
+  v.setUint32(14, 40, true);
+  v.setInt32(18, width, true);
+  v.setInt32(22, -height, true); // top-down
+  v.setUint16(26, 1, true);
+  v.setUint16(28, depth, true);
+  v.setUint32(34, pixSz, true);
+  v.setInt32(38, 2835, true); v.setInt32(42, 2835, true);
+  for (let y = 0; y < height; y++) {
+    let rp = 54 + y * rowSz;
+    for (let x = 0; x < width; x++) {
+      const s = (y * width + x) * 4;
+      if (depth === 32) {
+        u8[rp++] = data[s+2]; u8[rp++] = data[s+1];
+        u8[rp++] = data[s];   u8[rp++] = data[s+3];
+      } else {
+        u8[rp++] = data[s+2]; u8[rp++] = data[s+1]; u8[rp++] = data[s];
+      }
+    }
+  }
+  return new Blob([buf], { type: 'image/bmp' });
+}
+
+// ── GIF encoder (static, LZW) ─────────────────────────────────────────────────
+function encodeGIF(canvas, numColors, dither) {
+  const ctx = canvas.getContext('2d');
+  const id = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const { data, width, height } = id;
+
+  // Quantize: histogram → top-N colors
+  const hist = new Map();
+  for (let i = 0; i < data.length; i += 4) {
+    const k = ((data[i] & 0xF8) << 8) | ((data[i+1] & 0xF8) << 3) | (data[i+2] >> 3);
+    hist.set(k, (hist.get(k) || 0) + 1);
+  }
+  const sorted = [...hist.entries()].sort((a, b) => b[1] - a[1]).slice(0, numColors);
+  const palette = sorted.map(([k]) => [
+    (k >> 8) & 0xF8, (k >> 3) & 0xF8, (k << 3) & 0xF8
+  ]);
+  while (palette.length < numColors) palette.push([0, 0, 0]);
+
+  // Map pixels to palette (with optional FS dithering)
+  const indices = new Uint8Array(width * height);
+  const err = new Float32Array(data.length);
+  for (let i = 0; i < data.length; i++) err[i] = data[i];
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const r = Math.max(0, Math.min(255, err[i]));
+      const g = Math.max(0, Math.min(255, err[i+1]));
+      const b = Math.max(0, Math.min(255, err[i+2]));
+      let best = 0, bestD = Infinity;
+      for (let c = 0; c < palette.length; c++) {
+        const dr = r - palette[c][0], dg = g - palette[c][1], db = b - palette[c][2];
+        const d = dr*dr + dg*dg*1.2 + db*db;
+        if (d < bestD) { bestD = d; best = c; }
+      }
+      indices[y * width + x] = best;
+      if (dither) {
+        const er = r - palette[best][0];
+        const eg = g - palette[best][1];
+        const eb = b - palette[best][2];
+        const spread = (nx, ny, f) => {
+          if (nx >= 0 && nx < width && ny < height) {
+            const j = (ny * width + nx) * 4;
+            err[j] += er * f; err[j+1] += eg * f; err[j+2] += eb * f;
+          }
+        };
+        spread(x+1, y, 7/16); spread(x-1, y+1, 3/16);
+        spread(x, y+1, 5/16); spread(x+1, y+1, 1/16);
+      }
+    }
+  }
+
+  // LZW compress
+  const colorBits = Math.max(2, Math.ceil(Math.log2(numColors)));
+  const minCS = colorBits;
+  const clearCode = 1 << minCS;
+  const eofCode = clearCode + 1;
+  const bits = [];
+  const wb = (code, size) => { for (let i = 0; i < size; i++) bits.push((code >> i) & 1); };
+
+  let codeSize = minCS + 1, nextCode, tbl;
+  const reset = () => { tbl = new Map(); codeSize = minCS + 1; nextCode = eofCode + 1; };
+
+  wb(clearCode, codeSize); reset();
+  let prefix = indices[0];
+  for (let i = 1; i < indices.length; i++) {
+    const suf = indices[i];
+    const key = prefix * 4096 + suf;
+    if (tbl.has(key)) {
+      prefix = tbl.get(key);
+    } else {
+      wb(prefix, codeSize);
+      if (nextCode < 4096) {
+        tbl.set(key, nextCode++);
+        if (nextCode > (1 << codeSize) && codeSize < 12) codeSize++;
+      } else { wb(clearCode, codeSize); reset(); }
+      prefix = suf;
+    }
+  }
+  wb(prefix, codeSize); wb(eofCode, codeSize);
+
+  // Pack bits → bytes
+  const cmpBytes = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    let byte = 0;
+    for (let j = 0; j < 8 && i + j < bits.length; j++) byte |= bits[i + j] << j;
+    cmpBytes.push(byte);
+  }
+
+  // Build GIF bytes
+  const out = [];
+  const w2 = v => { out.push(v & 0xFF); out.push((v >> 8) & 0xFF); };
+  const wStr = s => { for (const c of s) out.push(c.charCodeAt(0)); };
+  const palSz = 1 << colorBits;
+
+  wStr('GIF89a');
+  w2(width); w2(height);
+  out.push(0x80 | 0x70 | (colorBits - 1)); // GCT flag, color resolution, GCT size
+  out.push(0); out.push(0);
+  for (let i = 0; i < palSz; i++) {
+    const c = i < palette.length ? palette[i] : [0, 0, 0];
+    out.push(c[0]); out.push(c[1]); out.push(c[2]);
+  }
+  // Image descriptor
+  out.push(0x2C); w2(0); w2(0); w2(width); w2(height); out.push(0);
+  out.push(minCS);
+  // Sub-blocks
+  for (let i = 0; i < cmpBytes.length;) {
+    const bsz = Math.min(255, cmpBytes.length - i);
+    out.push(bsz);
+    for (let j = 0; j < bsz; j++) out.push(cmpBytes[i++]);
+  }
+  out.push(0); out.push(0x3B);
+  return new Blob([new Uint8Array(out)], { type: 'image/gif' });
+}
+
+// ── App state ─────────────────────────────────────────────────────────────────
+const FILES = [];
+let converting = false;
+
+const ICO_SIZES = [16, 32, 48, 64, 128, 256];
+const $ = id => document.getElementById(id);
+
+// Init ICO size chips
+const icoGrid = $('icoGrid');
+ICO_SIZES.forEach(s => {
+  const lbl = document.createElement('label');
+  lbl.className = 'ico-chip';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox'; cb.value = s; cb.id = 'ico_' + s;
+  cb.checked = s <= 64;
+  lbl.append(cb, `${s}×${s}`);
+  icoGrid.appendChild(lbl);
+});
+
+// Panel visibility
+function updatePanels() {
+  const fmt = $('outFmt').value;
+  $('pQuality').classList.toggle('hidden', ['bmp','ico','gif','png'].includes(fmt));
+  $('pIco').classList.toggle('hidden', fmt !== 'ico');
+  $('pBmp').classList.toggle('hidden', fmt !== 'bmp');
+  $('pGif').classList.toggle('hidden', fmt !== 'gif');
+  $('rowLossless').classList.toggle('hidden', fmt !== 'webp');
+  $('rowQuality').classList.toggle('hidden', fmt === 'webp' && $('lossless').checked);
+  $('avifWarn').classList.toggle('hidden', fmt !== 'avif' || avifOk);
+  $('webpWarn').classList.toggle('hidden', fmt !== 'webp' || webpOk);
+  // BG panel: always visible except for PNG/ICO which are fully alpha-capable
+  $('pBg').classList.toggle('hidden', ['png','ico'].includes(fmt));
+}
+
+function updateResize() {
+  const mode = $('resizeMode').value;
+  $('resizeDims').classList.toggle('hidden', mode === 'none');
+  $('rowRW').classList.toggle('hidden', mode === 'height');
+  $('rowRH').classList.toggle('hidden', mode === 'width');
+  // aspect-ratio checkbox: visible when both W and H are in play, or for single-axis modes too
+  $('rowAR').classList.toggle('hidden', mode === 'exact' || mode === 'cover');
+}
+
+$('outFmt').onchange = updatePanels;
+$('lossless').onchange = updatePanels;
+$('resizeMode').onchange = updateResize;
+$('quality').oninput = () => $('qualityVal').textContent = $('quality').value;
+$('bgMode').onchange = () => {
+  $('rowBgColor').classList.toggle('hidden', $('bgMode').value !== 'custom');
+};
+
+// Format support detection
+let avifOk = true, webpOk = true;
+(async () => {
+  const tc = document.createElement('canvas');
+  tc.width = 1; tc.height = 1;
+  const testFmt = (mime) => new Promise(res => tc.toBlob(b => res(!!b && b.type === mime), mime));
+  webpOk = await testFmt('image/webp');
+  avifOk = await testFmt('image/avif');
+  updatePanels();
+})();
+
+updatePanels(); updateResize();
+
+// ── File handling ──────────────────────────────────────────────────────────────
+const dropZone = $('dropZone');
+const fileInput = $('fileInput');
+
+dropZone.onclick = () => fileInput.click();
+$('addBtn').onclick = () => fileInput.click();
+dropZone.ondragover = e => { e.preventDefault(); dropZone.classList.add('drag-over'); };
+dropZone.ondragleave = () => dropZone.classList.remove('drag-over');
+dropZone.ondrop = e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  addFiles([...e.dataTransfer.files]);
+};
+fileInput.onchange = () => { addFiles([...fileInput.files]); fileInput.value = ''; };
+
+$('clearBtn').onclick = () => { FILES.length = 0; renderList(); syncButtons(); };
+
+$('dlAllBtn').onclick = () => {
+  FILES.filter(f => f.status === 'done' && f.blob)
+       .forEach((f, i) => setTimeout(() => dlBlob(f.blob, f.outName), i * 120));
+};
+
+function addFiles(rawFiles) {
+  rawFiles
+    .filter(f => f.type.startsWith('image/') || /\.(ico|bmp|tiff?|avif|heic|heif|svg|gif|png|jpe?g|webp)$/i.test(f.name))
+    .forEach(f => {
+      const idx = FILES.length;
+      FILES.push({ file: f, status: 'pending', blob: null, outName: null, error: null, thumb: null, w: 0, h: 0 });
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          FILES[idx].thumb = img;
+          FILES[idx].w = img.naturalWidth || 256;
+          FILES[idx].h = img.naturalHeight || 256;
+          renderItem(idx);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(f);
+    });
+  renderList(); syncButtons();
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────────
+function renderList() {
+  const fl = $('fileList');
+  fl.innerHTML = '';
+  if (FILES.length === 0) {
+    fl.innerHTML = '<div class="empty-msg">No files added yet.</div>';
+    return;
+  }
+  FILES.forEach((_, i) => fl.appendChild(buildItem(i)));
+}
+
+function renderItem(idx) {
+  const fl = $('fileList');
+  const existing = fl.querySelector(`[data-idx="${idx}"]`);
+  const el = buildItem(idx);
+  if (existing) fl.replaceChild(el, existing);
+  else fl.appendChild(el);
+}
+
+function buildItem(idx) {
+  const f = FILES[idx];
+  const div = document.createElement('div');
+  div.className = 'file-item'; div.dataset.idx = idx;
+
+  // thumb
+  const tw = document.createElement('div'); tw.className = 'thumb-wrap';
+  if (f.thumb) {
+    const tc = document.createElement('canvas');
+    tc.width = 38; tc.height = 38; tc.className = 'tc';
+    const cx = tc.getContext('2d');
+    const sc = Math.min(38 / (f.thumb.naturalWidth || 1), 38 / (f.thumb.naturalHeight || 1));
+    const tw2 = (f.thumb.naturalWidth || 38) * sc, th2 = (f.thumb.naturalHeight || 38) * sc;
+    cx.drawImage(f.thumb, (38-tw2)/2, (38-th2)/2, tw2, th2);
+    tw.appendChild(tc);
+  } else { tw.innerHTML = '<span class="ph">🖼</span>'; }
+  div.appendChild(tw);
+
+  // info
+  const info = document.createElement('div'); info.className = 'file-info';
+  const nm = document.createElement('div'); nm.className = 'file-name';
+  nm.textContent = f.file.name; nm.title = f.file.name;
+  const mt = document.createElement('div'); mt.className = 'file-meta';
+  mt.textContent = fmtBytes(f.file.size) + (f.w ? ` · ${f.w}×${f.h}` : '');
+  info.append(nm, mt); div.appendChild(info);
+
+  // badge
+  const badge = document.createElement('span'); badge.className = 'fmt-badge';
+  badge.textContent = f.file.name.split('.').pop().toUpperCase();
+  div.appendChild(badge);
+
+  // status
+  const stMap = { pending: ['s-pending','Pending'], converting: ['s-converting','Converting…'], done: ['s-done','Done'], error: ['s-error','Error'] };
+  const [cls, lbl] = stMap[f.status];
+  const st = document.createElement('span');
+  st.className = 'file-status ' + cls; st.textContent = lbl;
+  if (f.status === 'error' && f.error) st.title = f.error;
+  div.appendChild(st);
+
+  // remove
+  const rm = document.createElement('button'); rm.className = 'btn-icon'; rm.textContent = '✕'; rm.title = 'Remove';
+  rm.onclick = () => { FILES.splice(idx, 1); renderList(); syncButtons(); };
+  div.appendChild(rm);
+
+  // download
+  if (f.status === 'done' && f.blob) {
+    const dl = document.createElement('button'); dl.className = 'btn-icon btn-dl'; dl.textContent = '⬇'; dl.title = 'Download';
+    dl.onclick = () => dlBlob(f.blob, f.outName);
+    div.appendChild(dl);
+  }
+
+  return div;
+}
+
+function fmtBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+function syncButtons() {
+  $('convertBtn').disabled = FILES.length === 0 || converting;
+  $('dlAllBtn').disabled = !FILES.some(f => f.status === 'done' && f.blob);
+}
+
+function dlBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ── Canvas helpers ─────────────────────────────────────────────────────────────
+function calcSize(ow, oh, mode, tw, th, keepAR) {
+  if (mode === 'none') return [ow, oh];
+  if (mode === 'width')  return [tw, keepAR ? Math.round(oh * tw / ow) : oh];
+  if (mode === 'height') return [keepAR ? Math.round(ow * th / oh) : ow, th];
+  if (mode === 'exact')  return [tw, th];
+  if (mode === 'fit') {
+    const s = Math.min(tw / ow, th / oh, 1);
+    return [Math.round(ow * s), Math.round(oh * s)];
+  }
+  if (mode === 'cover') return [tw, th];
+  return [ow, oh];
+}
+
+function makeCanvas(img, w, h, mode, ow, oh, bgMode, bgColor) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+
+  // background fill
+  if (bgMode === 'white') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); }
+  else if (bgMode === 'black') { ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, w, h); }
+  else if (bgMode === 'custom') { ctx.fillStyle = bgColor; ctx.fillRect(0, 0, w, h); }
+
+  if (mode === 'cover') {
+    const s = Math.max(w / ow, h / oh);
+    const dw = ow * s, dh = oh * s;
+    ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  } else {
+    ctx.drawImage(img, 0, 0, w, h);
+  }
+  return c;
+}
+
+function canvasToBlob(c, mime, q) {
+  return new Promise((res, rej) =>
+    c.toBlob(b => b ? res(b) : rej(new Error(mime + ' not supported')), mime, q)
+  );
+}
+
+// ── Conversion ─────────────────────────────────────────────────────────────────
+$('convertBtn').onclick = convertAll;
+
+async function convertAll() {
+  if (converting) return;
+  converting = true; syncButtons();
+  const pb = $('progressBar'); pb.classList.remove('hidden');
+  $('progressFill').style.width = '0%'; $('statusTxt').textContent = '';
+
+  const fmt     = $('outFmt').value;
+  const quality = parseInt($('quality').value) / 100;
+  const isLossless = $('lossless').checked;
+  const bmpDepth   = parseInt($('bmpDepth').value);
+  const gifColors  = parseInt($('gifColors').value);
+  const gifDither  = $('gifDither').checked;
+  const resMode    = $('resizeMode').value;
+  const rW = parseInt($('resizeW').value) || 800;
+  const rH = parseInt($('resizeH').value) || 600;
+  const keepAR     = $('keepAR').checked;
+  const bgMode     = $('bgMode').value;
+  const bgColor    = $('bgColor').value;
+  const prefix     = $('fnPrefix').value;
+  const suffix     = $('fnSuffix').value;
+  const icoSizes   = ICO_SIZES.filter(s => { const cb = $('ico_'+s); return cb && cb.checked; });
+
+  const ext = { jpeg: 'jpg', png: 'png', webp: 'webp', avif: 'avif', bmp: 'bmp', ico: 'ico', gif: 'gif' };
+  const mime = { jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', avif: 'image/avif' };
+
+  for (let i = 0; i < FILES.length; i++) {
+    const item = FILES[i];
+    item.status = 'converting'; renderItem(i);
+    try {
+      const img = await loadImg(item.file);
+      item.thumb = img;
+      item.w = img.naturalWidth || 256;
+      item.h = img.naturalHeight || 256;
+
+      const [cw, ch] = calcSize(item.w, item.h, resMode, rW, rH, keepAR);
+      const base = prefix + item.file.name.replace(/\.[^.]+$/, '') + suffix;
+
+      if (fmt === 'ico') {
+        const sizes = icoSizes.length ? icoSizes : [32];
+        const canvases = sizes.map(s => {
+          const c = document.createElement('canvas'); c.width = s; c.height = s;
+          const ctx = c.getContext('2d');
+          ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, s, s);
+          return c;
+        });
+        item.blob = encodeICO(canvases);
+        item.outName = base + '.ico';
+      } else if (fmt === 'bmp') {
+        const c = makeCanvas(img, cw, ch, resMode, item.w, item.h, bgMode, bgColor);
+        item.blob = encodeBMP(c, bmpDepth);
+        item.outName = base + '.bmp';
+      } else if (fmt === 'gif') {
+        const c = makeCanvas(img, cw, ch, resMode, item.w, item.h, bgMode, bgColor);
+        item.blob = encodeGIF(c, gifColors, gifDither);
+        item.outName = base + '.gif';
+      } else {
+        const c = makeCanvas(img, cw, ch, resMode, item.w, item.h, bgMode, bgColor);
+        const qParam = (fmt === 'png') ? undefined
+                     : (fmt === 'webp' && isLossless) ? undefined
+                     : quality;
+        item.blob = await canvasToBlob(c, mime[fmt], qParam);
+        item.outName = base + '.' + ext[fmt];
+      }
+      item.status = 'done';
+    } catch (e) {
+      item.status = 'error'; item.error = e.message || String(e);
+    }
+    $('progressFill').style.width = ((i + 1) / FILES.length * 100) + '%';
+    $('statusTxt').textContent = `${i + 1} / ${FILES.length}`;
+    renderItem(i);
+  }
+
+  converting = false; syncButtons();
+  const ok = FILES.filter(f => f.status === 'done').length;
+  const fail = FILES.filter(f => f.status === 'error').length;
+  $('statusTxt').textContent = `Done: ${ok} converted${fail ? `, ${fail} failed` : ''}.`;
+}
+
+function loadImg(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); res(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not load: ' + file.name)); };
+    img.src = url;
+  });
+}
+</script>
+</body>
+</html>
